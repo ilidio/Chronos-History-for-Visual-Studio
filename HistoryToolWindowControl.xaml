@@ -1,0 +1,9 @@
+<UserControl x:Class="ChronosHistoryVS.HistoryToolWindowControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <Grid>
+        <wv2:WebView2 Name="webView" Source="about:blank" />
+    </Grid>
+</UserControl>

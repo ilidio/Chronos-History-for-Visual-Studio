@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+
+  <Commands package="guidChronosPackage">
+    <Menus>
+      <Menu guid="guidChronosPackageCmdSet" id="ChronosSubMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidChronosPackageCmdSet" id="ChronosGroup" />
+        <Strings>
+          <ButtonText>Chronos History</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
+
+    <Groups>
+      <!-- Main group that goes into VS context menus -->
+      <Group guid="guidChronosPackageCmdSet" id="ChronosGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+      </Group>
+
+      <!-- Groups inside our sub-menu for organization -->
+      <Group guid="guidChronosPackageCmdSet" id="LocalHistoryGroup" priority="0x0100">
+        <Parent guid="guidChronosPackageCmdSet" id="ChronosSubMenu"/>
+      </Group>
+      <Group guid="guidChronosPackageCmdSet" id="GitHistoryGroup" priority="0x0200">
+        <Parent guid="guidChronosPackageCmdSet" id="ChronosSubMenu"/>
+      </Group>
+      <Group guid="guidChronosPackageCmdSet" id="ProjectHistoryGroup" priority="0x0300">
+        <Parent guid="guidChronosPackageCmdSet" id="ChronosSubMenu"/>
+      </Group>
+      <Group guid="guidChronosPackageCmdSet" id="UtilityGroup" priority="0x0400">
+        <Parent guid="guidChronosPackageCmdSet" id="ChronosSubMenu"/>
+      </Group>
+      <Group guid="guidChronosPackageCmdSet" id="TransferGroup" priority="0x0500">
+        <Parent guid="guidChronosPackageCmdSet" id="ChronosSubMenu"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <!-- Local History Section -->
+      <Button guid="guidChronosPackageCmdSet" id="ShowHistoryCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="LocalHistoryGroup" />
+        <Strings>
+          <ButtonText>Show History</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="ShowHistorySelectionCommandId" priority="0x0200" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="LocalHistoryGroup" />
+        <Strings>
+          <ButtonText>Show History for Selection</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Git History Section -->
+      <Button guid="guidChronosPackageCmdSet" id="ShowGitHistoryCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="GitHistoryGroup" />
+        <Strings>
+          <ButtonText>Show Git History</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="GitHistorySelectionCommandId" priority="0x0200" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="GitHistoryGroup" />
+        <Strings>
+          <ButtonText>Git History for Selection</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="CompareWithBranchCommandId" priority="0x0300" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="GitHistoryGroup" />
+        <Strings>
+          <ButtonText>Compare with Branch...</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Project History Section -->
+      <Button guid="guidChronosPackageCmdSet" id="ShowProjectHistoryCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="ProjectHistoryGroup" />
+        <Strings>
+          <ButtonText>Show Project History</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="ShowHistoryGraphCommandId" priority="0x0200" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="ProjectHistoryGroup" />
+        <Strings>
+          <ButtonText>Show History Graph</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="ShowRecentChangesCommandId" priority="0x0300" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="ProjectHistoryGroup" />
+        <Strings>
+          <ButtonText>Show Recent Changes</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Utility Section -->
+      <Button guid="guidChronosPackageCmdSet" id="ToggleHeatmapCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="UtilityGroup" />
+        <Strings>
+          <ButtonText>Toggle Code Heatmap</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="PutLabelCommandId" priority="0x0200" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="UtilityGroup" />
+        <Strings>
+          <ButtonText>Put Label</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="GenerateCommitMessageCommandId" priority="0x0300" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="UtilityGroup" />
+        <Strings>
+          <ButtonText>Generate Commit Message</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Transfer Section -->
+      <Button guid="guidChronosPackageCmdSet" id="ExportHistoryCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="TransferGroup" />
+        <Strings>
+          <ButtonText>Export History</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChronosPackageCmdSet" id="ImportHistoryCommandId" priority="0x0200" type="Button">
+        <Parent guid="guidChronosPackageCmdSet" id="TransferGroup" />
+        <Strings>
+          <ButtonText>Import History</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <CommandPlacements>
+    <!-- Placement in Tools menu -->
+    <CommandPlacement guid="guidChronosPackageCmdSet" id="ChronosGroup" priority="0x0600">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+    </CommandPlacement>
+    
+    <!-- Placement in Solution Explorer - Items -->
+    <CommandPlacement guid="guidChronosPackageCmdSet" id="ChronosGroup" priority="0x0600">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+    </CommandPlacement>
+    
+    <!-- Placement in Solution Explorer - Folders -->
+    <CommandPlacement guid="guidChronosPackageCmdSet" id="ChronosGroup" priority="0x0600">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_FOLDERNODE"/>
+    </CommandPlacement>
+    
+    <!-- Placement in Code Editor -->
+    <CommandPlacement guid="guidChronosPackageCmdSet" id="ChronosGroup" priority="0x0600">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+    </CommandPlacement>
+  </CommandPlacements>
+
+  <Symbols>
+    <GuidSymbol name="guidChronosPackage" value="{43717282-5A32-4412-B063-2336D0907B64}" />
+    <GuidSymbol name="guidChronosPackageCmdSet" value="{3a435889-4e0e-4340-985e-9e7f86414c27}">
+      <IDSymbol name="ChronosSubMenu" value="0x1000" />
+      <IDSymbol name="ChronosGroup" value="0x1020" />
+      
+      <IDSymbol name="LocalHistoryGroup" value="0x1030" />
+      <IDSymbol name="GitHistoryGroup" value="0x1040" />
+      <IDSymbol name="ProjectHistoryGroup" value="0x1050" />
+      <IDSymbol name="UtilityGroup" value="0x1060" />
+      <IDSymbol name="TransferGroup" value="0x1070" />
+
+      <IDSymbol name="ShowHistoryCommandId" value="0x0100" />
+      <IDSymbol name="ShowHistorySelectionCommandId" value="0x0101" />
+      <IDSymbol name="ShowGitHistoryCommandId" value="0x0102" />
+      <IDSymbol name="GitHistorySelectionCommandId" value="0x0103" />
+      <IDSymbol name="ShowProjectHistoryCommandId" value="0x0104" />
+      <IDSymbol name="ShowHistoryGraphCommandId" value="0x0105" />
+      <IDSymbol name="ShowRecentChangesCommandId" value="0x0106" />
+      <IDSymbol name="ToggleHeatmapCommandId" value="0x0107" />
+      <IDSymbol name="PutLabelCommandId" value="0x0108" />
+      <IDSymbol name="GenerateCommitMessageCommandId" value="0x0109" />
+      <IDSymbol name="ExportHistoryCommandId" value="0x0110" />
+      <IDSymbol name="ImportHistoryCommandId" value="0x0111" />
+      <IDSymbol name="CompareWithBranchCommandId" value="0x0112" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

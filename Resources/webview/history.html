@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos History</title>
+    <script type="text/javascript" src="vis-network.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            color: #ccc; 
+            background-color: #1e1e1e; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+        }
+        .container { display: flex; width: 100%; height: 100%; flex-direction: column; }
+        .sidebar { flex: 1; display: flex; flex-direction: column; background-color: #252526; overflow: hidden; position: relative; }
+        
+        #network { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1e1e1e;
+            display: none;
+            z-index: 5;
+        }
+        
+        .jb-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .jb-th { 
+            text-align: left; 
+            padding: 8px; 
+            background: #333; 
+            font-size: 0.8em; 
+            text-transform: uppercase; 
+            opacity: 0.7;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .jb-td { padding: 8px; border-bottom: 1px solid #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85em; }
+        .jb-tr { cursor: pointer; }
+        .jb-tr:hover { background-color: #2a2d2e; }
+        .jb-tr.selected { background-color: #094771; color: #fff; }
+        .jb-tr.label-event { color: #569cd6; font-weight: bold; }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none; z-index: 100;
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #252526; border: 1px solid #444; width: 80%; max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column;
+        }
+        .modal-header { padding: 12px; background: #2d2d2d; border-bottom: 1px solid #333; font-weight: bold; font-size: 0.9em; }
+        .modal-body { padding: 0; max-height: 300px; overflow-y: auto; }
+        .modal-footer { padding: 8px; border-top: 1px solid #333; display: flex; justify-content: flex-end; }
+        .branch-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #333; font-size: 0.85em; }
+        .branch-item:hover { background: #37373d; }
+        .branch-item.selected { background: #094771; color: #fff; }
+        
+        .list-container { flex: 1; overflow-y: auto; }
+        
+        .actions { 
+            padding: 8px; 
+            background: #2d2d2d; 
+            border-bottom: 1px solid #333; 
+            display: flex; 
+            gap: 8px;
+            align-items: center;
+        }
+        .view-title {
+            flex: 1;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #007acc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-left: 8px;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        button:hover { background: #0062a3; }
+        
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            opacity: 0.8;
+            flex-direction: column;
+            padding: 20px;
+            text-align: center;
+            overflow-y: auto;
+        }
+        .debug-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            text-align: left;
+            width: 90%;
+            max-width: 600px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .debug-label { color: #569cd6; font-weight: bold; }
+        .debug-value { color: #ce9178; word-break: break-all; }
+        .debug-cmd { 
+            background: #000; 
+            padding: 8px; 
+            margin-top: 10px; 
+            display: block; 
+            color: #dcdcaa;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="actions">
+            <div id="viewTitle" class="view-title">Chronos History</div>
+            <button onclick="refresh()">Refresh</button>
+            <button onclick="openDiff()">Open Diff</button>
+            <button onclick="restore()">Restore</button>
+            <button id="btnCompareBranch" onclick="compareWithBranch()" style="display:none">Compare with Branch</button>
+        </div>
+        <div class="sidebar">
+            <div id="network"></div>
+            <div class="list-container">
+                <table class="jb-table">
+                    <thead>
+                        <tr>
+                            <th class="jb-th" style="width: 150px;">Time</th>
+                            <th class="jb-th" style="width: 80px;">Event</th>
+                            <th class="jb-th">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyList">
+                        <!-- Entries will be added here -->
+                    </tbody>
+                </table>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <h3>No history found</h3>
+                    
+                    <div id="gitDiagnostics" class="debug-panel" style="display: none;">
+                        <div><span class="debug-label">Query Path:</span> <span id="diagQueryPath" class="debug-value"></span></div>
+                        <div><span class="debug-label">Repo Root:</span> <span id="diagRepoRoot" class="debug-value"></span></div>
+                        <div><span class="debug-label">Git Relative Path:</span> <span id="diagRelPath" class="debug-value"></span></div>
+                        <div id="debugInfoContainer" style="margin-top:5px; display:none;"><span class="debug-label">Error:</span> <span id="diagDebugInfo" class="debug-value" style="color:#f44747;"></span></div>
+                        <div style="margin-top:10px;">To debug, run this in your terminal:</div>
+                        <code id="diagCmd" class="debug-cmd"></code>
+                    </div>
+
+                    <div id="localDiagnostics" class="debug-panel" style="display: none;">
+                        <div><span class="debug-label">Query Path:</span> <span id="diagLocalPath" class="debug-value"></span></div>
+                        <p style="font-size: 0.9em; opacity: 0.7;">Local history is captured on File -> Save.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="branchModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">Select Branch to Compare</div>
+            <div id="branchList" class="modal-body">
+                <!-- Branches will be listed here -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeBranchModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const historyList = document.getElementById('historyList');
+        const emptyState = document.getElementById('emptyState');
+        const viewTitle = document.getElementById('viewTitle');
+        const networkDiv = document.getElementById('network');
+        
+        const gitDiagnostics = document.getElementById('gitDiagnostics');
+        const localDiagnostics = document.getElementById('localDiagnostics');
+        
+        let selectedId = null;
+        let network = null;
+
+        function sendMessage(command, params = {}) {
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage({ command, ...params });
+            }
+        }
+
+        function onMessage(message) {
+            console.log('Received from C#:', message);
+            if (message.command === 'historyData') {
+                if (message.title) viewTitle.innerText = message.title;
+                renderHistory(message);
+            } else if (message.command === 'askLabel') {
+                const label = window.prompt("Enter label name for this snapshot:", "Checkpoint");
+                if (label) {
+                    sendMessage('createLabel', { filePath: message.filePath, label: label });
+                }
+            } else if (message.command === 'commitMessage') {
+                window.prompt("Generated Commit Message (copy and use in Git):", message.message);
+            } else if (message.command === 'graphData') {
+                renderGraph(message);
+            } else if (message.command === 'heatmapData') {
+                renderHeatmap(message);
+            } else if (message.command === 'pickBranch') {
+                showBranchModal(message.branches, message.filePath);
+            }
+        }
+
+        function showBranchModal(branches, filePath) {
+            const modal = document.getElementById('branchModal');
+            const list = document.getElementById('branchList');
+            list.innerHTML = '';
+            
+            branches.forEach(branch => {
+                const div = document.createElement('div');
+                div.className = 'branch-item';
+                div.innerText = branch;
+                div.onclick = () => {
+                    sendMessage('compareWithRef', { filePath: filePath, refName: branch, label: `Branch: ${branch}` });
+                    closeBranchModal();
+                };
+                list.appendChild(div);
+            });
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeBranchModal() {
+            document.getElementById('branchModal').style.display = 'none';
+        }
+
+        if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.addEventListener('message', event => {
+                onMessage(event.data);
+            });
+        }
+
+        function renderHistory(msg) {
+            networkDiv.style.display = 'none';
+            const snapshots = msg.data;
+            // It's a file-specific view if we have a valid queryPath that isn't "Global" or "None"
+            const isFileView = msg.queryPath && msg.queryPath !== "Global" && msg.queryPath !== "None";
+            
+            document.getElementById('btnCompareBranch').style.display = isFileView ? 'inline-block' : 'none';
+            
+            historyList.innerHTML = '';
+            
+            const isGlobal = msg.queryPath === "Global" || msg.queryPath === "None" || !msg.queryPath;
+            
+            // Update header if global
+            const headerRow = document.querySelector('thead tr');
+            if (isGlobal) {
+                headerRow.innerHTML = `
+                    <th class="jb-th" style="width: 150px;">Time</th>
+                    <th class="jb-th" style="width: 80px;">Event</th>
+                    <th class="jb-th" style="width: 150px;">File</th>
+                    <th class="jb-th">Details</th>
+                `;
+            } else {
+                headerRow.innerHTML = `
+                    <th class="jb-th" style="width: 150px;">Time</th>
+                    <th class="jb-th" style="width: 80px;">Event</th>
+                    <th class="jb-th">Details</th>
+                `;
+            }
+            
+            if (!snapshots || snapshots.length === 0) {
+                emptyState.style.display = 'flex';
+                
+                if (msg.gitDiscovered !== undefined) {
+                    gitDiagnostics.style.display = 'block';
+                    localDiagnostics.style.display = 'none';
+                    
+                    document.getElementById('diagQueryPath').innerText = msg.queryPath || "Unknown";
+                    document.getElementById('diagRepoRoot').innerText = msg.repoRoot || "Not Found";
+                    document.getElementById('diagRelPath').innerText = msg.relativePath || "N/A";
+
+                    const debugInfo = document.getElementById('diagDebugInfo');
+                    const debugContainer = document.getElementById('debugInfoContainer');
+                    if (msg.debugInfo) {
+                        debugInfo.innerText = msg.debugInfo;
+                        debugContainer.style.display = 'block';
+                    } else {
+                        debugContainer.style.display = 'none';
+                    }
+                    
+                    let cmd;
+                    if (msg.relativePath && msg.relativePath !== "N/A") {
+                        cmd = `git log -- "${msg.relativePath}"`;
+                    } else {
+                        cmd = `git log -- "${msg.queryPath || ''}"`;
+                    }
+                    document.getElementById('diagCmd').innerText = cmd;
+                } else {
+                    gitDiagnostics.style.display = 'none';
+                    localDiagnostics.style.display = 'block';
+                    document.getElementById('diagLocalPath').innerText = msg.queryPath || "Unknown";
+                }
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            gitDiagnostics.style.display = 'none';
+            localDiagnostics.style.display = 'none';
+
+            snapshots.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = 'jb-tr';
+                if (s.eventType === 'label') tr.classList.add('label-event');
+                if (s.id === selectedId) tr.classList.add('selected');
+                
+                tr.onclick = () => {
+                    document.querySelectorAll('.jb-tr').forEach(r => r.classList.remove('selected'));
+                    tr.classList.add('selected');
+                    selectedId = s.id;
+                    sendMessage('preview', { snapshotId: s.id, filePath: s.filePath });
+                };
+
+                tr.ondblclick = () => {
+                    openDiff();
+                };
+
+                const date = new Date(s.timestamp).toLocaleString();
+                const fileName = s.filePath ? s.filePath.split(/[\\/]/).pop() : '';
+                
+                if (isGlobal) {
+                    tr.innerHTML = `
+                        <td class="jb-td">${date}</td>
+                        <td class="jb-td">${s.eventType}</td>
+                        <td class="jb-td" title="${s.filePath}">${fileName}</td>
+                        <td class="jb-td">${s.label || s.description || ''}</td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="jb-td">${date}</td>
+                        <td class="jb-td">${s.eventType}</td>
+                        <td class="jb-td">${s.label || s.description || ''}</td>
+                    `;
+                }
+                historyList.appendChild(tr);
+            });
+        }
+
+        function renderGraph(msg) {
+            document.getElementById('btnCompareBranch').style.display = 'none';
+            const snapshots = msg.fullHistory || [];
+            if (snapshots.length === 0) {
+                renderEmptyState("No history found to graph.");
+                return;
+            }
+
+            networkDiv.style.display = 'block';
+            emptyState.style.display = 'none';
+            historyList.innerHTML = '';
+            
+            const nodes = new vis.DataSet();
+            const edges = new vis.DataSet();
+            const fileGroups = {};
+            
+            snapshots.sort((a, b) => a.timestamp - b.timestamp);
+
+            const fileColors = {};
+            const colors = ['#4a9eff', '#ff4a4a', '#4aff4a', '#ff9e4a', '#e94aff', '#4affef', '#ffef4a', '#a2ff4a'];
+            let colorIdx = 0;
+
+            snapshots.forEach((s, i) => {
+                if (!fileColors[s.filePath]) {
+                    fileColors[s.filePath] = colors[colorIdx % colors.length];
+                    colorIdx++;
+                }
+
+                let color = fileColors[s.filePath];
+                let shape = 'dot';
+                let size = 10;
+                let label = '';
+
+                if (s.eventType === 'label') {
+                    label = s.label;
+                    shape = 'diamond';
+                    size = 15;
+                    color = '#ffd700';
+                }
+
+                if (!fileGroups[s.filePath]) {
+                    fileGroups[s.filePath] = [];
+                }
+                fileGroups[s.filePath].push(s);
+
+                const timeStr = new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                const fileName = s.filePath.split(/[\\/]/).pop();
+
+                nodes.add({
+                    id: s.id,
+                    label: label || timeStr,
+                    title: `File: ${fileName}\nTime: ${new Date(s.timestamp).toLocaleString()}\nType: ${s.eventType}`,
+                    color: {
+                        background: color,
+                        border: color,
+                        highlight: { border: '#fff', background: color }
+                    },
+                    shape: shape,
+                    size: size,
+                    font: { color: '#ccc', size: 12 },
+                    data: s
+                });
+
+                const fileSnaps = fileGroups[s.filePath];
+                if (fileSnaps.length > 1) {
+                    edges.add({
+                        from: fileSnaps[fileSnaps.length - 2].id,
+                        to: s.id,
+                        arrows: 'to',
+                        color: { color: color, opacity: 0.4 },
+                        width: 2
+                    });
+                }
+            });
+
+            const options = {
+                physics: { stabilization: true },
+                interaction: { hover: true },
+                nodes: { shadow: true },
+                edges: { smooth: { type: 'continuous' } }
+            };
+            
+            if (network) network.destroy();
+            network = new vis.Network(networkDiv, { nodes, edges }, options);
+
+            network.on("doubleClick", function (params) {
+                if (params.nodes.length === 1) {
+                    const nodeId = params.nodes[0];
+                    const node = nodes.get(nodeId);
+                    sendMessage('openDiff', { snapshotId: node.data.id, filePath: node.data.filePath });
+                }
+            });
+        }
+
+        function renderEmptyState(text) {
+            networkDiv.style.display = 'none';
+            emptyState.style.display = 'flex';
+            emptyState.innerHTML = `<h3>${text}</h3>`;
+        }
+
+        function renderHeatmap(msg) {
+            document.getElementById('btnCompareBranch').style.display = 'none';
+            networkDiv.style.display = 'none';
+            historyList.innerHTML = '';
+            emptyState.style.display = 'flex';
+            emptyState.innerHTML = `
+                <div style="width: 90%; max-width: 600px; padding: 20px;">
+                    <h3>${msg.title}</h3>
+                    <p style="opacity: 0.7; font-size: 0.9em;">Heatmap visualization is being calculated...</p>
+                    <div style="margin-top: 20px; background: #2d2d2d; border-radius: 4px; padding: 15px; text-align: left;">
+                        <p style="font-size: 0.8em; line-height: 1.4;">
+                            The heatmap shows line-level activity by analyzing the frequency of changes in recent local snapshots. 
+                            Darker regions indicate more frequent modifications.
+                        </p>
+                    </div>
+                </div>
+            `;
+            gitDiagnostics.style.display = 'none';
+            localDiagnostics.style.display = 'none';
+        }
+
+        function refresh() {
+            sendMessage('getHistory');
+        }
+
+        function openDiff() {
+            if (selectedId) {
+                sendMessage('openDiff', { snapshotId: selectedId });
+            }
+        }
+
+        function restore() {
+            if (selectedId) {
+                sendMessage('restore', { snapshotId: selectedId });
+            }
+        }
+        
+        function compareWithBranch() {
+            sendMessage('compareWithBranch');
+        }
+
+        window.onload = () => { refresh(); };
+    </script>
+</body>
+</html>

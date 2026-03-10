@@ -1,0 +1,102 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Chronos-History-VS\\Chronos-History-VS.csproj": {}
+  },
+  "projects": {
+    "C:\\Chronos-History-VS\\Chronos-History-VS.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Chronos-History-VS\\Chronos-History-VS.csproj",
+        "projectName": "ChronosHistoryVS",
+        "projectPath": "C:\\Chronos-History-VS\\Chronos-History-VS.csproj",
+        "packagesPath": "C:\\Users\\ilidiomartins\\.nuget\\packages\\",
+        "outputPath": "C:\\Chronos-History-VS\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\ilidiomartins\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "dependencies": {
+            "LibGit2Sharp": {
+              "target": "Package",
+              "version": "[0.26.2, )"
+            },
+            "Microsoft.VSSDK.BuildTools": {
+              "target": "Package",
+              "version": "[17.0.5232, )"
+            },
+            "Microsoft.VisualStudio.SDK": {
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            },
+            "Microsoft.VisualStudio.Shell.Framework": {
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            },
+            "Microsoft.VisualStudio.Shell.Interop": {
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            },
+            "Microsoft.VisualStudio.Shell.Interop.11.0": {
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            },
+            "Microsoft.VisualStudio.TextManager.Interop": {
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            },
+            "Microsoft.Web.WebView2": {
+              "target": "Package",
+              "version": "[1.0.1264.42, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[8.0.5, )"
+            }
+          }
+        }
+      },
+      "runtimes": {
+        "win": {
+          "#import": []
+        },
+        "win-arm64": {
+          "#import": []
+        },
+        "win-x64": {
+          "#import": []
+        },
+        "win-x86": {
+          "#import": []
+        }
+      }
+    }
+  }
+}
