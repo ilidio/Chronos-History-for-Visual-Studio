@@ -123,12 +123,17 @@
       <VSIXSourceItem Include="$(OutputPath)lib\win32\**\*">
         <VSIXSubPath>lib\win32\%(RecursiveDir)</VSIXSubPath>
       </VSIXSourceItem>
-      <!-- Also include the main library DLLs if they aren't already included -->
+      <!-- Include all localized resource DLLs (this adds ~10-15MB) -->
+      <VSIXSourceItem Include="$(OutputPath)**\*.resources.dll">
+        <VSIXSubPath>%(RecursiveDir)</VSIXSubPath>
+      </VSIXSourceItem>
+      <!-- Also include the main library DLLs -->
       <VSIXSourceItem Include="$(OutputPath)LibGit2Sharp.dll" />
       <VSIXSourceItem Include="$(OutputPath)Microsoft.Web.WebView2.Core.dll" />
       <VSIXSourceItem Include="$(OutputPath)Microsoft.Web.WebView2.WinForms.dll" />
       <VSIXSourceItem Include="$(OutputPath)Microsoft.Web.WebView2.Wpf.dll" />
       <VSIXSourceItem Include="$(OutputPath)System.Text.Json.dll" />
+      <VSIXSourceItem Include="$(OutputPath)Newtonsoft.Json.dll" />
     </ItemGroup>
   </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
