@@ -28,7 +28,7 @@ jobs:
     - name: Build VSIX
       run: |
         msbuild Chronos-History-VS.sln /p:Configuration=Release /p:DeployExtension=false /t:Build
-        msbuild Chronos-History-VS.sln /p:Configuration=Release /p:DeployExtension=false /t:CreateVsixContainer /p:ZipPackageCompressionLevel=Normal
+        msbuild Chronos-History-VS.csproj /p:Configuration=Release /p:DeployExtension=false /t:CreateVsixContainer /p:ZipPackageCompressionLevel=Normal
 
     - name: Upload VSIX Artifact
       uses: actions/upload-artifact@v4

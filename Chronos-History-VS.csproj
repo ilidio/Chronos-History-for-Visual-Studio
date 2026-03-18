@@ -114,18 +114,23 @@
     <Content Include="Resources\webview\vis-network.min.js">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <!-- Include all native runtimes (WebView2 and LibGit2Sharp) -->
-    <Content Include="$(OutputPath)runtimes\**\*">
-      <Link>runtimes\%(RecursiveDir)%(FileName)%(Extension)</Link>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="$(OutputPath)lib\win32\**\*">
-      <Link>lib\win32\%(RecursiveDir)%(FileName)%(Extension)</Link>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Visible>false</Visible>
-    </Content>
   </ItemGroup>
+  <Target Name="IncludeNativeBinaries" BeforeTargets="GetVsixSourceItems">
+    <ItemGroup>
+      <VSIXSourceItem Include="$(OutputPath)runtimes\**\*">
+        <VSIXSubPath>runtimes\%(RecursiveDir)</VSIXSubPath>
+      </VSIXSourceItem>
+      <VSIXSourceItem Include="$(OutputPath)lib\win32\**\*">
+        <VSIXSubPath>lib\win32\%(RecursiveDir)</VSIXSubPath>
+      </VSIXSourceItem>
+      <!-- Also include the main library DLLs if they aren't already included -->
+      <VSIXSourceItem Include="$(OutputPath)LibGit2Sharp.dll" />
+      <VSIXSourceItem Include="$(OutputPath)Microsoft.Web.WebView2.Core.dll" />
+      <VSIXSourceItem Include="$(OutputPath)Microsoft.Web.WebView2.WinForms.dll" />
+      <VSIXSourceItem Include="$(OutputPath)Microsoft.Web.WebView2.Wpf.dll" />
+      <VSIXSourceItem Include="$(OutputPath)System.Text.Json.dll" />
+    </ItemGroup>
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
 </Project>
