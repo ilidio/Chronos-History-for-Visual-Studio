@@ -226,30 +226,34 @@ namespace ChronosHistoryVS
         {
             if (string.IsNullOrEmpty(filePath)) return (null, null);
             string dir = Path.GetDirectoryName(filePath);
-            string fileName = Path.GetFileName(filePath);
 
             string repoRoot = (await RunGitCommandAsync(dir, "rev-parse --show-toplevel")).Trim().Replace("\\", "/");
             if (string.IsNullOrEmpty(repoRoot)) return (null, null);
 
-            // Step 1: Get the relative path prefix from Git
-            string prefix = (await RunGitCommandAsync(dir, "rev-parse --show-prefix")).Trim().Replace("\\", "/");
+            // MAGIC FIX: Use Git's Case-Insensitive pathspec lookup
+            // This tells Git: "Find me the REAL casing of this file in the index"
+            // The ":(icase)" prefix is a Git-native feature for this exact problem.
+            string gitRelativePath = (await RunGitCommandAsync(repoRoot, $"ls-files --full-name \":(icase){filePath}\"")).Trim().Replace("\\", "/");
             
-            // Step 2: Use ls-files on the PARENT directory to find the actual case-sensitive filename
-            // This is the most reliable way on Windows to bypass the input casing.
-            string allFilesInDir = await RunGitCommandAsync(dir, "ls-files --full-name .");
-            string gitFileName = fileName;
-            
-            var matches = allFilesInDir.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var match in matches) {
-                // match is relative to repo root. We need just the filename part.
-                string nameOnly = Path.GetFileName(match);
-                if (string.Equals(nameOnly, fileName, StringComparison.OrdinalIgnoreCase)) {
-                    gitFileName = nameOnly;
-                    break;
+            if (string.IsNullOrEmpty(gitRelativePath)) {
+                // If it's a new/untracked file, Git might not see it in ls-files yet.
+                // Fallback to manual directory-based case correction for the filename.
+                string prefix = (await RunGitCommandAsync(dir, "rev-parse --show-prefix")).Trim().Replace("\\", "/");
+                string fileName = Path.GetFileName(filePath);
+                
+                string allFilesInDir = await RunGitCommandAsync(dir, "ls-files --full-name .");
+                var matches = allFilesInDir.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var match in matches) {
+                    string nameOnly = Path.GetFileName(match);
+                    if (string.Equals(nameOnly, fileName, StringComparison.OrdinalIgnoreCase)) {
+                        fileName = nameOnly;
+                        break;
+                    }
                 }
+                gitRelativePath = prefix + fileName;
             }
 
-            return (repoRoot, prefix + gitFileName);
+            return (repoRoot, gitRelativePath);
         }
 
         private async Task<List<string>> GetBranchesAsync(string filePath)
