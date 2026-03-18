@@ -54,16 +54,11 @@ namespace ChronosHistoryVS
             return relevantSnapshots;
         }
 
-        public async Task<List<Snapshot>> FilterGitHistoryForSelectionAsync(string filePath, SelectionRange range)
+        public async Task<List<Snapshot>> FilterGitHistoryForSelectionAsync(string filePath, SelectionRange range, string repoRoot, string relativePath)
         {
             return await Task.Run(async () => {
                 var list = new List<Snapshot>();
-                string dir = Path.GetDirectoryName(filePath);
-                string repoRoot = (await RunGitCommandAsync(dir, "rev-parse --show-toplevel")).Trim().Replace("\\", "/");
-                if (string.IsNullOrEmpty(repoRoot)) return list;
-                string prefix = (await RunGitCommandAsync(dir, "rev-parse --show-prefix")).Trim().Replace("\\", "/");
-                string gitFileMatch = (await RunGitCommandAsync(dir, $"ls-files {Path.GetFileName(filePath)}")).Trim().Replace("\\", "/");
-                string relativePath = prefix + (!string.IsNullOrEmpty(gitFileMatch) ? Path.GetFileName(gitFileMatch) : Path.GetFileName(filePath));
+                if (string.IsNullOrEmpty(repoRoot) || string.IsNullOrEmpty(relativePath)) return list;
 
                 bool nativeFailed = false;
                 try {
@@ -94,14 +89,31 @@ namespace ChronosHistoryVS
 
                 if (nativeFailed || list.Count == 0) {
                     try {
-                        int start = range.startLine + 1;
-                        int end = range.endLine + 1;
-                        string output = await RunGitCommandAsync(repoRoot, $"log -L {start},{end}:\"{relativePath}\" -s --pretty=format:\"%H|%at|%an|%s\"");
+                        int start = Math.Max(1, range.startLine + 1);
+                        int end = Math.Max(start, range.endLine + 1);
+                        // Use a more robust log -L call. We use -n 100 to avoid excessive wait times on huge files.
+                        string output = await RunGitCommandAsync(repoRoot, $"log -L {start},{end}:\"{relativePath}\" -n 100 -s --pretty=format:\"%H|%at|%an|%s\"");
+                        
+                        if (string.IsNullOrEmpty(output)) {
+                            // If log -L failed, it might be due to line count mismatch. Try without -L as a last resort.
+                            output = await RunGitCommandAsync(repoRoot, $"log -- \"{relativePath}\" -n 50 --pretty=format:\"%H|%at|%an|%s\"");
+                        }
+
                         if (!string.IsNullOrEmpty(output)) {
                             var lines = output.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var line in lines) {
                                 var parts = line.Trim('"').Split('|');
-                                if (parts.Length >= 4) list.Add(new Snapshot { id = parts[0], timestamp = long.Parse(parts[1]) * 1000, eventType = "git", label = parts[3], description = parts[2], filePath = filePath, relevantRange = range });
+                                if (parts.Length >= 4) {
+                                    list.Add(new Snapshot { 
+                                        id = parts[0], 
+                                        timestamp = long.Parse(parts[1]) * 1000, 
+                                        eventType = "git", 
+                                        label = parts[3], 
+                                        description = parts[2], 
+                                        filePath = filePath, 
+                                        relevantRange = range 
+                                    });
+                                }
                             }
                         }
                     } catch { }

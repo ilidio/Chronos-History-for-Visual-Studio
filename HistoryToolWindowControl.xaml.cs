@@ -230,27 +230,27 @@ namespace ChronosHistoryVS
             string repoRoot = (await RunGitCommandAsync(dir, "rev-parse --show-toplevel")).Trim().Replace("\\", "/");
             if (string.IsNullOrEmpty(repoRoot)) return (null, null);
 
-            // MAGIC FIX: Use Git's Case-Insensitive pathspec lookup
-            // This tells Git: "Find me the REAL casing of this file in the index"
-            // The ":(icase)" prefix is a Git-native feature for this exact problem.
-            string gitRelativePath = (await RunGitCommandAsync(repoRoot, $"ls-files --full-name \":(icase){filePath}\"")).Trim().Replace("\\", "/");
+            // Step 1: Try to get relative path manually first to avoid drive letter issues
+            string relativePath = filePath.Replace("\\", "/");
+            string normalizedRoot = repoRoot.EndsWith("/") ? repoRoot : repoRoot + "/";
+            if (relativePath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase)) {
+                relativePath = relativePath.Substring(normalizedRoot.Length);
+            } else {
+                // If drive letter casing differs, try matching after the drive letter
+                int colonIdx = relativePath.IndexOf(':');
+                int rootColonIdx = normalizedRoot.IndexOf(':');
+                if (colonIdx > 0 && rootColonIdx > 0 && 
+                    string.Equals(relativePath.Substring(colonIdx), normalizedRoot.Substring(rootColonIdx), StringComparison.OrdinalIgnoreCase)) {
+                    relativePath = relativePath.Substring(normalizedRoot.Length);
+                }
+            }
+
+            // Step 2: Use Git's Case-Insensitive lookup with the relative path
+            string gitRelativePath = (await RunGitCommandAsync(repoRoot, $"ls-files --full-name \":(icase){relativePath}\"")).Trim().Replace("\\", "/");
             
             if (string.IsNullOrEmpty(gitRelativePath)) {
-                // If it's a new/untracked file, Git might not see it in ls-files yet.
-                // Fallback to manual directory-based case correction for the filename.
-                string prefix = (await RunGitCommandAsync(dir, "rev-parse --show-prefix")).Trim().Replace("\\", "/");
-                string fileName = Path.GetFileName(filePath);
-                
-                string allFilesInDir = await RunGitCommandAsync(dir, "ls-files --full-name .");
-                var matches = allFilesInDir.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var match in matches) {
-                    string nameOnly = Path.GetFileName(match);
-                    if (string.Equals(nameOnly, fileName, StringComparison.OrdinalIgnoreCase)) {
-                        fileName = nameOnly;
-                        break;
-                    }
-                }
-                gitRelativePath = prefix + fileName;
+                // Fallback to the manually calculated relative path if ls-files failed
+                gitRelativePath = relativePath;
             }
 
             return (repoRoot, gitRelativePath);
@@ -474,7 +474,7 @@ namespace ChronosHistoryVS
                     repoRoot = gitInfo.repoRoot;
                     relativePath = gitInfo.relativePath;
                     discovered = true;
-                    try { list = await filter.FilterGitHistoryForSelectionAsync(filePath, range); } catch { }
+                    try { list = await filter.FilterGitHistoryForSelectionAsync(filePath, range, repoRoot, relativePath); } catch { }
                 }
                 return new { list, repoRoot, relativePath, discovered };
             });
