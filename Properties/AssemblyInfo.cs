@@ -15,8 +15,8 @@ using Microsoft.VisualStudio.Shell;
 
 [assembly: Guid("43717282-5A32-4412-B063-2336D0907B64")]
 
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
 
 // This is often needed by CreatePkgDef to locate the DLL
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\ChronosHistoryVS.dll")]
