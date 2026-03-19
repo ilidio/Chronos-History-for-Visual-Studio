@@ -1,33 +1,27 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Chronos-History-VS\\Chronos-History-VS.csproj": {}
+    "/Users/ilidiomartins/src/Personal/Chronos-History-Visual-Studio-Extension/Chronos-History-VS.csproj": {}
   },
   "projects": {
-    "C:\\Chronos-History-VS\\Chronos-History-VS.csproj": {
+    "/Users/ilidiomartins/src/Personal/Chronos-History-Visual-Studio-Extension/Chronos-History-VS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Chronos-History-VS\\Chronos-History-VS.csproj",
+        "projectUniqueName": "/Users/ilidiomartins/src/Personal/Chronos-History-Visual-Studio-Extension/Chronos-History-VS.csproj",
         "projectName": "ChronosHistoryVS",
-        "projectPath": "C:\\Chronos-History-VS\\Chronos-History-VS.csproj",
-        "packagesPath": "C:\\Users\\ilidiomartins\\.nuget\\packages\\",
-        "outputPath": "C:\\Chronos-History-VS\\obj\\",
+        "projectPath": "/Users/ilidiomartins/src/Personal/Chronos-History-Visual-Studio-Extension/Chronos-History-VS.csproj",
+        "packagesPath": "/Users/ilidiomartins/.nuget/packages/",
+        "outputPath": "/Users/ilidiomartins/src/Personal/Chronos-History-Visual-Studio-Extension/obj/",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "UsingMicrosoftNETSdk": false,
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\ilidiomartins\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/ilidiomartins/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net472"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -50,7 +44,7 @@
             },
             "Microsoft.VSSDK.BuildTools": {
               "target": "Package",
-              "version": "[17.0.5232, )"
+              "version": "[17.10.2185, )"
             },
             "Microsoft.VisualStudio.SDK": {
               "target": "Package",
@@ -81,20 +75,6 @@
               "version": "[8.0.5, )"
             }
           }
-        }
-      },
-      "runtimes": {
-        "win": {
-          "#import": []
-        },
-        "win-arm64": {
-          "#import": []
-        },
-        "win-x64": {
-          "#import": []
-        },
-        "win-x86": {
-          "#import": []
         }
       }
     }

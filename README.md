@@ -66,5 +66,15 @@ Configure the AI and other settings in **Tools -> Options -> Chronos History -> 
 - **Backend:** C# / .NET Framework 4.7.2.
 - **Native Power:** Uses direct Win32 DLLs for performance with automatic CLI fallback for compatibility.
 
+## 🤝 Integrations
+
+### Chronos History Diff Desktop App
+Enhance your history tracking experience with the **[Chronos History Diff Desktop App](https://github.com/ilidio/Chronos-History-Diff-App)**. This standalone application works in synergy with the Visual Studio extension to provide:
+*   A dedicated, high-performance desktop interface for navigating Chronos local history.
+*   Editable side-by-side Monaco diffs for deep version comparison.
+*   Advanced comparison tools and full-screen visualization of your local history.
+
+Use it standalone or pair it with this Visual Studio extension to unlock local file snapshots and leverage a powerful comparison environment.
+
 ## 📄 License
 MIT

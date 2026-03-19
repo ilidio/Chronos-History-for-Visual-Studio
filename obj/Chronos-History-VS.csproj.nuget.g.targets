@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <Import Project="$(NuGetPackageRoot)system.text.json\8.0.5\buildTransitive\net462\System.Text.Json.targets" Condition="Exists('$(NuGetPackageRoot)system.text.json\8.0.5\buildTransitive\net462\System.Text.Json.targets')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.threading.analyzers\17.0.64\build\Microsoft.VisualStudio.Threading.Analyzers.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.threading.analyzers\17.0.64\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.web.webview2\1.0.1264.42\build\Microsoft.Web.WebView2.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.web.webview2\1.0.1264.42\build\Microsoft.Web.WebView2.targets')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.sdk.analyzers\15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.sdk.analyzers\15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.vssdk.buildtools\17.0.5232\build\Microsoft.VSSDK.BuildTools.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.vssdk.buildtools\17.0.5232\build\Microsoft.VSSDK.BuildTools.targets')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.setup.configuration.interop\3.0.4492\build\Microsoft.VisualStudio.Setup.Configuration.Interop.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.setup.configuration.interop\3.0.4492\build\Microsoft.VisualStudio.Setup.Configuration.Interop.targets')" />
+    <Import Project="$(NuGetPackageRoot)system.text.json/8.0.5/buildTransitive/net462/System.Text.Json.targets" Condition="Exists('$(NuGetPackageRoot)system.text.json/8.0.5/buildTransitive/net462/System.Text.Json.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.threading.analyzers/17.0.64/build/Microsoft.VisualStudio.Threading.Analyzers.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.threading.analyzers/17.0.64/build/Microsoft.VisualStudio.Threading.Analyzers.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.web.webview2/1.0.1264.42/build/Microsoft.Web.WebView2.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.web.webview2/1.0.1264.42/build/Microsoft.Web.WebView2.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.vssdk.compatibilityanalyzer/17.10.2185/build/Microsoft.VsSDK.CompatibilityAnalyzer.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.vssdk.compatibilityanalyzer/17.10.2185/build/Microsoft.VsSDK.CompatibilityAnalyzer.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.sdk.analyzers/17.7.22/build/Microsoft.VisualStudio.SDK.Analyzers.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.sdk.analyzers/17.7.22/build/Microsoft.VisualStudio.SDK.Analyzers.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.vssdk.buildtools/17.10.2185/build/Microsoft.VSSDK.BuildTools.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.vssdk.buildtools/17.10.2185/build/Microsoft.VSSDK.BuildTools.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.setup.configuration.interop/3.0.4492/build/Microsoft.VisualStudio.Setup.Configuration.Interop.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.setup.configuration.interop/3.0.4492/build/Microsoft.VisualStudio.Setup.Configuration.Interop.targets')" />
   </ImportGroup>
 </Project>
