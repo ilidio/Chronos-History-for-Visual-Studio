@@ -23,6 +23,7 @@ namespace ChronosHistoryVS
         private readonly HistoryFilter filter;
         private string currentViewMode = "history";
         private bool isWebViewReady = false;
+        private IVsWindowFrame _lastDiffFrame;
 
         public HistoryToolWindowControl(HistoryStorage storage)
         {
@@ -363,7 +364,8 @@ namespace ChronosHistoryVS
         private async Task PreviewDiffAsync(string snapshotId, string filePath = null)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            await OpenDiffAsync(snapshotId, filePath);
+            // Reusing the tab for "Preview" (Skimming mode)
+            await OpenDiffAsync(snapshotId, filePath, true);
         }
 
         private async Task SendGitHistoryAsync(string filePath)
@@ -536,11 +538,19 @@ namespace ChronosHistoryVS
             }
         }
 
-        private async Task OpenDiffAsync(string snapshotId, string filePath = null)
+        private async Task OpenDiffAsync(string snapshotId, string filePath = null, bool reuseTab = false)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             string currentPath = filePath ?? await GetActiveFilePathAsync();
             if (string.IsNullOrEmpty(currentPath)) return;
+
+            // If requested, close the previous preview frame to "reuse" the same tab
+            if (reuseTab && _lastDiffFrame != null) {
+                try {
+                    _lastDiffFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                } catch { }
+                _lastDiffFrame = null;
+            }
 
             string leftContent, rightContent, leftLabel, rightLabel;
             string fileName = Path.GetFileName(currentPath);
@@ -568,11 +578,17 @@ namespace ChronosHistoryVS
                 string tempFileRight = Path.Combine(Path.GetTempPath(), $"Chronos_R_{snapshotId.Substring(0, Math.Min(4, snapshotId.Length))}_{fileName}");
                 
                 File.WriteAllText(tempFileLeft, leftContent ?? "");
+                IVsWindowFrame newFrame;
                 if (isGit) {
                     File.WriteAllText(tempFileRight, rightContent);
-                    diffService.OpenComparisonWindow2(tempFileLeft, tempFileRight, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
+                    newFrame = diffService.OpenComparisonWindow2(tempFileLeft, tempFileRight, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
                 } else {
-                    diffService.OpenComparisonWindow2(tempFileLeft, currentPath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
+                    newFrame = diffService.OpenComparisonWindow2(tempFileLeft, currentPath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
+                }
+
+                // If this was a preview, store the frame for future reuse
+                if (reuseTab) {
+                    _lastDiffFrame = newFrame;
                 }
             }
         }
