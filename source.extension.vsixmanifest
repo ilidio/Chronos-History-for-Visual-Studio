@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-manifest-design/2011">
   <Metadata>
-    <Identity Id="ChronosHistoryVS.43717282-5A32-4412-B063-2336D0907B64" Version="1.2" Language="en-US" Publisher="Ilídio Martins" />
+    <Identity Id="ChronosHistoryVS.43717282-5A32-4412-B063-2336D0907B64" Version="1.2.1" Language="en-US" Publisher="Ilídio Martins" />
     <DisplayName>Chronos History</DisplayName>
     <Description xml:space="preserve">Comprehensive Chronos and Git History tracking for Visual Studio.</Description>
     <MoreInfo>https://github.com/ilidio/Chronos-History-for-Visual-Studio</MoreInfo>

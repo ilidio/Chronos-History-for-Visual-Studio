@@ -230,26 +230,17 @@ namespace ChronosHistoryVS
             string repoRoot = (await RunGitCommandAsync(dir, "rev-parse --show-toplevel")).Trim().Replace("\\", "/");
             if (string.IsNullOrEmpty(repoRoot)) return (null, null);
 
-            // Step 1: Try to get relative path manually first to avoid drive letter issues
-            string relativePath = filePath.Replace("\\", "/");
-            string normalizedRoot = repoRoot.EndsWith("/") ? repoRoot : repoRoot + "/";
-            if (relativePath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase)) {
-                relativePath = relativePath.Substring(normalizedRoot.Length);
-            } else {
-                // If drive letter casing differs, try matching after the drive letter
-                int colonIdx = relativePath.IndexOf(':');
-                int rootColonIdx = normalizedRoot.IndexOf(':');
-                if (colonIdx > 0 && rootColonIdx > 0 && 
-                    string.Equals(relativePath.Substring(colonIdx), normalizedRoot.Substring(rootColonIdx), StringComparison.OrdinalIgnoreCase)) {
-                    relativePath = relativePath.Substring(normalizedRoot.Length);
-                }
-            }
+            // Use git to get the relative path to avoid issues with drive letters, symlinks (macOS /private/var), etc.
+            string prefix = (await RunGitCommandAsync(dir, "rev-parse --show-prefix")).Trim().Replace("\\", "/");
+            string fileName = Path.GetFileName(filePath);
+            string relativePath = Path.Combine(prefix, fileName).Replace("\\", "/").TrimStart('/');
 
-            // Step 2: Use Git's Case-Insensitive lookup with the relative path
+            // Step 2: Use Git's Case-Insensitive lookup with the relative path to get the exact casing in index
             string gitRelativePath = (await RunGitCommandAsync(repoRoot, $"ls-files --full-name \":(icase){relativePath}\"")).Trim().Replace("\\", "/");
             
+            if (gitRelativePath.Contains("\n")) gitRelativePath = gitRelativePath.Split('\n')[0].Trim();
+
             if (string.IsNullOrEmpty(gitRelativePath)) {
-                // Fallback to the manually calculated relative path if ls-files failed
                 gitRelativePath = relativePath;
             }
 
@@ -359,9 +350,9 @@ namespace ChronosHistoryVS
                 switch (request.command)
                 {
                     case "getHistory": await RefreshCurrentViewAsync(); break;
-                    case "preview": await PreviewDiffAsync(request.snapshotId); break;
+                    case "preview": await PreviewDiffAsync(request.snapshotId, request.filePath); break;
                     case "restore": await RestoreSnapshotAsync(request.snapshotId); break;
-                    case "openDiff": await OpenDiffAsync(request.snapshotId); break;
+                    case "openDiff": await OpenDiffAsync(request.snapshotId, request.filePath); break;
                     case "createLabel": await CreateLabelAsync(request.filePath, request.label); break;
                     case "compareWithBranch": await CompareWithBranchAsync(request.filePath); break;
                     case "compareWithRef": await OpenDiffWithRefAsync(request.filePath, request.refName, request.label); break;
@@ -369,10 +360,10 @@ namespace ChronosHistoryVS
             } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Message Error: {ex}"); }
         }
 
-        private async Task PreviewDiffAsync(string snapshotId)
+        private async Task PreviewDiffAsync(string snapshotId, string filePath = null)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            await OpenDiffAsync(snapshotId);
+            await OpenDiffAsync(snapshotId, filePath);
         }
 
         private async Task SendGitHistoryAsync(string filePath)
@@ -404,12 +395,15 @@ namespace ChronosHistoryVS
                         } catch { nativeFailed = true; }
 
                         if (nativeFailed || list.Count == 0) {
-                            string output = await RunGitCommandAsync(repoRoot, $"log --pretty=format:\"%H|%at|%an|%s\" -- \"{relativePath}\"");
+                            string output = await RunGitCommandAsync(repoRoot, $"log --pretty=format:\"%H|%at|%an|%s\" -- \":(icase){relativePath}\"");
                             if (!string.IsNullOrEmpty(output)) {
                                 var lines = output.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
                                 foreach (var line in lines) {
                                     var parts = line.Trim('"').Split('|');
-                                    if (parts.Length >= 4) list.Add(new Snapshot { id = parts[0], timestamp = long.Parse(parts[1]) * 1000, eventType = "git", label = parts[3], description = parts[2], filePath = filePath });
+                                    if (parts.Length >= 4) {
+                                        string msg = string.Join("|", parts.Skip(3));
+                                        list.Add(new Snapshot { id = parts[0], timestamp = long.Parse(parts[1]) * 1000, eventType = "git", label = msg, description = parts[2], filePath = filePath });
+                                    }
                                 }
                             }
                         }
@@ -495,16 +489,26 @@ namespace ChronosHistoryVS
         private async Task<string> GetSnapshotContentByIdAsync(string snapshotId, string currentPath)
         {
             if (string.IsNullOrEmpty(snapshotId) || string.IsNullOrEmpty(currentPath)) return null;
-            if (snapshotId.Length == 40 && !snapshotId.Contains("-")) {
+            
+            // Check if it's a Git SHA (optionally with ^1 for parent)
+            bool isGit = (snapshotId.Length == 40 && !snapshotId.Contains("-")) || 
+                         (snapshotId.EndsWith("^1") && snapshotId.Length == 42);
+
+            if (isGit) {
                 var gitInfo = await GetGitInfoAsync(currentPath);
                 if (!string.IsNullOrEmpty(gitInfo.repoRoot)) {
-                    try {
-                        using (var repo = new Repository(gitInfo.repoRoot)) {
-                            var commit = repo.Lookup<LibGit2Sharp.Commit>(snapshotId);
-                            var blob = (Blob)commit.Tree[gitInfo.relativePath].Target;
-                            return blob.GetContentText();
-                        }
-                    } catch { }
+                    if (!snapshotId.Contains("^")) {
+                        try {
+                            using (var repo = new Repository(gitInfo.repoRoot)) {
+                                var commit = repo.Lookup<LibGit2Sharp.Commit>(snapshotId);
+                                if (commit != null) {
+                                    var blob = commit.Tree[gitInfo.relativePath]?.Target as Blob;
+                                    if (blob != null) return blob.GetContentText();
+                                }
+                            }
+                        } catch { }
+                    }
+                    // Fallback to git show (handles ^1 correctly)
                     return await RunGitCommandAsync(gitInfo.repoRoot, $"show {snapshotId}:\"{gitInfo.relativePath}\"");
                 }
             } else {
@@ -532,21 +536,44 @@ namespace ChronosHistoryVS
             }
         }
 
-        private async Task OpenDiffAsync(string snapshotId)
+        private async Task OpenDiffAsync(string snapshotId, string filePath = null)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            string currentPath = await GetActiveFilePathAsync();
+            string currentPath = filePath ?? await GetActiveFilePathAsync();
             if (string.IsNullOrEmpty(currentPath)) return;
-            string snapshotContent = await GetSnapshotContentByIdAsync(snapshotId, currentPath);
-            if (snapshotContent == null) return;
+
+            string leftContent, rightContent, leftLabel, rightLabel;
+            string fileName = Path.GetFileName(currentPath);
+            bool isGit = (snapshotId.Length == 40 && !snapshotId.Contains("-"));
+
+            if (isGit) {
+                // Git commit: Compare parent vs commit
+                leftContent = await GetSnapshotContentByIdAsync($"{snapshotId}^1", currentPath) ?? "";
+                rightContent = await GetSnapshotContentByIdAsync(snapshotId, currentPath);
+                leftLabel = $"Parent: {snapshotId.Substring(0, Math.Min(8, snapshotId.Length))}";
+                rightLabel = $"Commit: {snapshotId.Substring(0, Math.Min(8, snapshotId.Length))}";
+            } else {
+                // Local snapshot: Compare snapshot vs current on disk
+                leftContent = await GetSnapshotContentByIdAsync(snapshotId, currentPath);
+                rightContent = File.Exists(currentPath) ? File.ReadAllText(currentPath) : "";
+                leftLabel = $"Snapshot: {snapshotId.Substring(0, Math.Min(8, snapshotId.Length))}";
+                rightLabel = $"Current: {fileName}";
+            }
+
+            if (rightContent == null) return;
+
             var diffService = ServiceProvider.GlobalProvider.GetService(typeof(SVsDifferenceService)) as IVsDifferenceService;
             if (diffService != null) {
-                string fileName = Path.GetFileName(currentPath);
-                string tempFile = Path.Combine(Path.GetTempPath(), $"Chronos_{snapshotId.Substring(0, Math.Min(8, snapshotId.Length))}_{fileName}");
-                File.WriteAllText(tempFile, snapshotContent);
-                string leftLabel = $"Snapshot: {snapshotId.Substring(0, Math.Min(8, snapshotId.Length))}";
-                string rightLabel = $"Current: {fileName}";
-                diffService.OpenComparisonWindow2(tempFile, currentPath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
+                string tempFileLeft = Path.Combine(Path.GetTempPath(), $"Chronos_L_{snapshotId.Substring(0, Math.Min(4, snapshotId.Length))}_{fileName}");
+                string tempFileRight = Path.Combine(Path.GetTempPath(), $"Chronos_R_{snapshotId.Substring(0, Math.Min(4, snapshotId.Length))}_{fileName}");
+                
+                File.WriteAllText(tempFileLeft, leftContent ?? "");
+                if (isGit) {
+                    File.WriteAllText(tempFileRight, rightContent);
+                    diffService.OpenComparisonWindow2(tempFileLeft, tempFileRight, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
+                } else {
+                    diffService.OpenComparisonWindow2(tempFileLeft, currentPath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
+                }
             }
         }
 

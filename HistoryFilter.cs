@@ -96,7 +96,7 @@ namespace ChronosHistoryVS
                         
                         if (string.IsNullOrEmpty(output)) {
                             // If log -L failed, it might be due to line count mismatch. Try without -L as a last resort.
-                            output = await RunGitCommandAsync(repoRoot, $"log -- \"{relativePath}\" -n 50 --pretty=format:\"%H|%at|%an|%s\"");
+                            output = await RunGitCommandAsync(repoRoot, $"log -- \":(icase){relativePath}\" -n 50 --pretty=format:\"%H|%at|%an|%s\"");
                         }
 
                         if (!string.IsNullOrEmpty(output)) {
