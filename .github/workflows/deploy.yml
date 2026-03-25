@@ -26,8 +26,10 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v3
 
-    - name: Setup NuGet
-      uses: nuget/setup-nuget@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '8.x' # Or appropriate version for runner tools
 
     - name: Restore NuGet Packages
       run: nuget restore Chronos-History-VS.sln
@@ -45,7 +47,7 @@ jobs:
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v2.6.1
       with:
         files: bin/Release/*.vsix
       env:
