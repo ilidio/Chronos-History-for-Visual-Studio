@@ -344,22 +344,25 @@ namespace ChronosHistoryVS
             diffService.OpenComparisonWindow2(tempFile, filePath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
         }
 
-        private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
-            try {
-                string jsonMessage = e.WebMessageAsJson;
-                var request = JsonSerializer.Deserialize<WebMessageRequest>(jsonMessage);
-                switch (request.command)
-                {
-                    case "getHistory": await RefreshCurrentViewAsync(); break;
-                    case "preview": await PreviewDiffAsync(request.snapshotId, request.filePath); break;
-                    case "restore": await RestoreSnapshotAsync(request.snapshotId); break;
-                    case "openDiff": await OpenDiffAsync(request.snapshotId, request.filePath); break;
-                    case "createLabel": await CreateLabelAsync(request.filePath, request.label); break;
-                    case "compareWithBranch": await CompareWithBranchAsync(request.filePath); break;
-                    case "compareWithRef": await OpenDiffWithRefAsync(request.filePath, request.refName, request.label); break;
-                }
-            } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Message Error: {ex}"); }
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try {
+                    string jsonMessage = e.WebMessageAsJson;
+                    var request = JsonSerializer.Deserialize<WebMessageRequest>(jsonMessage);
+                    switch (request.command)
+                    {
+                        case "getHistory": await RefreshCurrentViewAsync(); break;
+                        case "preview": await PreviewDiffAsync(request.snapshotId, request.filePath); break;
+                        case "restore": await RestoreSnapshotAsync(request.snapshotId); break;
+                        case "openDiff": await OpenDiffAsync(request.snapshotId, request.filePath); break;
+                        case "createLabel": await CreateLabelAsync(request.filePath, request.label); break;
+                        case "compareWithBranch": await CompareWithBranchAsync(request.filePath); break;
+                        case "compareWithRef": await OpenDiffWithRefAsync(request.filePath, request.refName, request.label); break;
+                    }
+                } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Message Error: {ex}"); }
+            });
         }
 
         private async Task PreviewDiffAsync(string snapshotId, string filePath = null)
@@ -530,7 +533,7 @@ namespace ChronosHistoryVS
             if (content != null) {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var dte = ServiceProvider.GlobalProvider.GetService(typeof(SDTE)) as EnvDTE.DTE;
-                if (dte?.ActiveDocument != null) {
+                if (dte != null && dte.ActiveDocument != null) {
                     var textDoc = dte.ActiveDocument.Object("TextDocument") as EnvDTE.TextDocument;
                     if (textDoc != null) {
                         var editPoint = textDoc.StartPoint.CreateEditPoint();
