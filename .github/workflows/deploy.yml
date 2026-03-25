@@ -47,8 +47,7 @@ jobs:
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v2.6.1
-      with:
-        files: bin/Release/*.vsix
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ github.ref_name }} bin/Release/*.vsix --title "Release ${{ github.ref_name }}" --generate-notes
