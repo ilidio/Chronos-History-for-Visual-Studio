@@ -190,8 +190,9 @@ namespace ChronosHistoryVS
             if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(labelName)) return;
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var dte = ServiceProvider.GlobalProvider.GetService(typeof(SDTE)) as EnvDTE.DTE;
+            if (dte == null) return;
             string content = "";
-            if (dte?.ActiveDocument != null && dte.ActiveDocument.FullName.Equals(path, StringComparison.OrdinalIgnoreCase)) {
+            if (dte.ActiveDocument != null && dte.ActiveDocument.FullName.Equals(path, StringComparison.OrdinalIgnoreCase)) {
                 var textDoc = dte.ActiveDocument.Object("TextDocument") as EnvDTE.TextDocument;
                 if (textDoc != null) content = textDoc.StartPoint.CreateEditPoint().GetText(textDoc.EndPoint);
             }
@@ -332,15 +333,15 @@ namespace ChronosHistoryVS
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var diffService = ServiceProvider.GlobalProvider.GetService(typeof(SVsDifferenceService)) as IVsDifferenceService;
-            if (diffService != null) {
-                string fileName = Path.GetFileName(filePath);
-                string safeRef = refName.Replace("/", "_").Replace("\\", "_");
-                string tempFile = Path.Combine(Path.GetTempPath(), $"Chronos_{safeRef}_{fileName}");
-                File.WriteAllText(tempFile, refContent);
-                string leftLabel = label ?? refName;
-                string rightLabel = $"Current: {fileName}";
-                diffService.OpenComparisonWindow2(tempFile, filePath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
-            }
+            if (diffService == null) return;
+            
+            string fileName = Path.GetFileName(filePath);
+            string safeRef = refName.Replace("/", "_").Replace("\\", "_");
+            string tempFile = Path.Combine(Path.GetTempPath(), $"Chronos_{safeRef}_{fileName}");
+            File.WriteAllText(tempFile, refContent);
+            string leftLabel = label ?? refName;
+            string rightLabel = $"Current: {fileName}";
+            diffService.OpenComparisonWindow2(tempFile, filePath, $"{leftLabel} vs {rightLabel}", "Chronos History", leftLabel, rightLabel, null, null, 0);
         }
 
         private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -483,7 +484,8 @@ namespace ChronosHistoryVS
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var dte = ServiceProvider.GlobalProvider.GetService(typeof(SDTE)) as EnvDTE.DTE;
-            var selection = dte?.ActiveDocument?.Selection as EnvDTE.TextSelection;
+            if (dte == null) return null;
+            var selection = dte.ActiveDocument?.Selection as EnvDTE.TextSelection;
             if (selection == null) return null;
             return new SelectionRange(selection.TopLine - 1, selection.BottomLine - 1);
         }

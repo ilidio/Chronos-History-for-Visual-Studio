@@ -67,7 +67,7 @@ namespace ChronosHistoryVS
             string filePath = GetFilePath(buffer);
             if (string.IsNullOrEmpty(filePath)) return;
 
-            Task.Run(async () => {
+            _ = Task.Run(async () => {
                 bool nativeFailed = false;
                 try
                 {
@@ -101,7 +101,6 @@ namespace ChronosHistoryVS
                         if (!string.IsNullOrEmpty(output)) {
                             lineBlame.Clear();
                             var lines = output.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                            int currentLine = 0;
                             
                             // Porcelain format is complex, but the first 40 chars are the SHA, 
                             // followed by line numbers. We look for 'author-time'
@@ -120,11 +119,9 @@ namespace ChronosHistoryVS
                             string simpleOutput = await RunGitCommandAsync(directory, $"blame -p \"{fileName}\"");
                             if (!string.IsNullOrEmpty(simpleOutput)) {
                                 var pLines = simpleOutput.Split('\n');
-                                string lastSha = "";
                                 for(int i=0; i<pLines.Length; i++) {
                                     string pl = pLines[i];
                                     if (pl.Length > 40 && pl.IndexOf(' ') == 40) {
-                                        lastSha = pl.Substring(0, 40);
                                         // author-time is usually 3 lines down
                                         for(int j=i+1; j<Math.Min(i+10, pLines.Length); j++) {
                                             if (pLines[j].StartsWith("author-time ")) {

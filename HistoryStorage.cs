@@ -65,7 +65,7 @@ namespace ChronosHistoryVS
             if (initialized) return;
             if (!Directory.Exists(globalStorageRoot))
             {
-                Directory.CreateDirectory(globalStorageRoot);
+                await Task.Run(() => Directory.CreateDirectory(globalStorageRoot));
             }
             initialized = true;
         }

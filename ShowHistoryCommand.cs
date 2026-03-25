@@ -65,7 +65,7 @@ namespace ChronosHistoryVS
 
         private void OpenToolWindow(string viewMode)
         {
-            this.package.JoinableTaskFactory.RunAsync(async delegate
+            _ = this.package.JoinableTaskFactory.RunAsync(async delegate
             {
                 var window = await this.package.ShowToolWindowAsync(typeof(HistoryToolWindow), 0, true, this.package.DisposalToken);
                 if (window != null && window.Frame != null)
