@@ -11,6 +11,7 @@ namespace ChronosHistoryVS
         private string apiKey = "";
         private string language = "English";
         private string model = "gemini-2.0-flash";
+        private bool saveInProjectFolder = false;
 
         [Category("AI Settings")]
         [DisplayName("Gemini API Key")]
@@ -37,6 +38,15 @@ namespace ChronosHistoryVS
         {
             get => model;
             set => model = value;
+        }
+
+        [Category("Storage Settings")]
+        [DisplayName("Save In Project Folder")]
+        [Description("If enabled, Chronos history will be stored in a .history folder in the project root instead of internal extension storage.")]
+        public bool SaveInProjectFolder
+        {
+            get => saveInProjectFolder;
+            set => saveInProjectFolder = value;
         }
     }
 }

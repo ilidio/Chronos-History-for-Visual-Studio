@@ -14,12 +14,33 @@ namespace ChronosHistoryVS
         private readonly Dictionary<string, (HistoryIndex index, string root)> indices = new Dictionary<string, (HistoryIndex, string)>();
         private bool initialized = false;
 
+        public Func<string, Task<string>> GetProjectRoot { get; set; }
+        public ChronosOptionsPage Settings { get; set; }
+
         public HistoryStorage()
         {
             globalStorageRoot = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "ChronosHistoryVS"
             );
+        }
+
+        private async Task<string> GetRootForFileAsync(string filePath)
+        {
+            if (Settings != null && Settings.SaveInProjectFolder && GetProjectRoot != null)
+            {
+                string projectRoot = await GetProjectRoot(filePath);
+                if (!string.IsNullOrEmpty(projectRoot))
+                {
+                    string historyPath = Path.Combine(projectRoot, ".history");
+                    if (!Directory.Exists(historyPath))
+                    {
+                        Directory.CreateDirectory(historyPath);
+                    }
+                    return historyPath;
+                }
+            }
+            return globalStorageRoot;
         }
 
         public async Task ExportHistoryAsync(string destPath)
@@ -113,8 +134,7 @@ namespace ChronosHistoryVS
         {
             await InitAsync();
 
-            // Simplified: for now always use global storage or logic to find project root if we had Env context
-            string root = globalStorageRoot;
+            string root = await GetRootForFileAsync(filePath);
             string indexUri = GetIndexUri(root);
             var index = await LoadIndexAsync(indexUri);
 
@@ -163,12 +183,25 @@ namespace ChronosHistoryVS
             await InitAsync();
             string normalizedPath = GetNormalizedPath(filePath);
             
-            // For now, just check global index. In a real VS extension, we'd also check project-local .history
-            string indexUri = GetIndexUri(globalStorageRoot);
-            var index = await LoadIndexAsync(indexUri);
+            var results = new List<Snapshot>();
 
-            return index.snapshots
-                .Where(s => GetNormalizedPath(s.filePath) == normalizedPath)
+            // Check global storage
+            var globalIndex = await LoadIndexAsync(GetIndexUri(globalStorageRoot));
+            results.AddRange(globalIndex.snapshots
+                .Where(s => GetNormalizedPath(s.filePath) == normalizedPath));
+
+            // Check project storage if enabled
+            string root = await GetRootForFileAsync(filePath);
+            if (root != globalStorageRoot)
+            {
+                var localIndex = await LoadIndexAsync(GetIndexUri(root));
+                results.AddRange(localIndex.snapshots
+                    .Where(s => GetNormalizedPath(s.filePath) == normalizedPath));
+            }
+
+            return results
+                .GroupBy(s => s.id) // Ensure unique if same snapshot somehow ended up in both (not expected)
+                .Select(g => g.First())
                 .OrderByDescending(s => s.timestamp)
                 .ToList();
         }
@@ -176,22 +209,51 @@ namespace ChronosHistoryVS
         public async Task<List<Snapshot>> GetAllHistoryAsync()
         {
             await InitAsync();
-            string indexUri = GetIndexUri(globalStorageRoot);
-            var index = await LoadIndexAsync(indexUri);
+            var results = new List<Snapshot>();
 
-            return index.snapshots
+            // Collect snapshots from all loaded indices (this covers both global and any local indices we've encountered)
+            foreach (var entry in indices.Values)
+            {
+                results.AddRange(entry.index.snapshots);
+            }
+
+            return results
+                .GroupBy(s => s.id)
+                .Select(g => g.First())
                 .OrderByDescending(s => s.timestamp)
                 .ToList();
         }
 
         public async Task<string> GetSnapshotContentAsync(Snapshot snapshot)
         {
-            string root = globalStorageRoot; // Should be matched with where snapshot was saved
-            string fullPath = Path.Combine(root, snapshot.storagePath);
-            if (File.Exists(fullPath))
+            // First check the roots we know about in indices
+            foreach (var entry in indices.Values)
             {
-                return await Task.Run(() => File.ReadAllText(fullPath));
+                string fullPath = Path.Combine(entry.root, snapshot.storagePath);
+                if (File.Exists(fullPath))
+                {
+                    return await Task.Run(() => File.ReadAllText(fullPath));
+                }
             }
+
+            // Fallback: check global storage explicitly
+            string globalPath = Path.Combine(globalStorageRoot, snapshot.storagePath);
+            if (File.Exists(globalPath))
+            {
+                return await Task.Run(() => File.ReadAllText(globalPath));
+            }
+
+            // Fallback: if we have a file path, check its project-local root
+            if (!string.IsNullOrEmpty(snapshot.filePath))
+            {
+                string root = await GetRootForFileAsync(snapshot.filePath);
+                string localPath = Path.Combine(root, snapshot.storagePath);
+                if (File.Exists(localPath))
+                {
+                    return await Task.Run(() => File.ReadAllText(localPath));
+                }
+            }
+
             return null;
         }
     }

@@ -51,6 +51,40 @@ namespace ChronosHistoryVS
             storage = new HistoryStorage();
             await storage.InitAsync();
 
+            // Set settings and project root helper
+            storage.Settings = (ChronosOptionsPage)GetDialogPage(typeof(ChronosOptionsPage));
+            storage.GetProjectRoot = async (filePath) => {
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var dte = (EnvDTE.DTE)await GetServiceAsync(typeof(EnvDTE.DTE));
+                if (dte == null || string.IsNullOrEmpty(filePath)) return null;
+
+                try {
+                    var item = dte.Solution.FindProjectItem(filePath);
+                    if (item != null && item.ContainingProject != null) {
+                        string projectDir = Path.GetDirectoryName(item.ContainingProject.FullName);
+                        if (!string.IsNullOrEmpty(projectDir) && Directory.Exists(projectDir)) {
+                            return projectDir;
+                        }
+                    }
+                } catch { }
+
+                // Fallback: search for .git or just parent dir
+                try {
+                    string current = Path.GetDirectoryName(filePath);
+                    while (!string.IsNullOrEmpty(current)) {
+                        if (Directory.Exists(Path.Combine(current, ".git"))) return current;
+                        if (Directory.Exists(Path.Combine(current, ".hg"))) return current;
+                        if (Directory.Exists(Path.Combine(current, ".svn"))) return current;
+                        
+                        var parent = Directory.GetParent(current);
+                        if (parent == null) break;
+                        current = parent.FullName;
+                    }
+                } catch { }
+
+                return Path.GetDirectoryName(filePath);
+            };
+
             // Register for document events
             var rdt = (IVsRunningDocumentTable)await GetServiceAsync(typeof(SVsRunningDocumentTable));
             if (rdt != null)
