@@ -516,6 +516,10 @@ namespace ChronosHistoryVS
                         } catch { }
                     }
                     // Fallback to git show (handles ^1 correctly)
+                    // Check if file exists in this revision first
+                    string exists = await RunGitCommandAsync(gitInfo.repoRoot, $"ls-tree -r {snapshotId} --name-only \"{gitInfo.relativePath}\"");
+                    if (string.IsNullOrEmpty(exists.Trim())) return null;
+                    
                     return await RunGitCommandAsync(gitInfo.repoRoot, $"show {snapshotId}:\"{gitInfo.relativePath}\"");
                 }
             } else {
