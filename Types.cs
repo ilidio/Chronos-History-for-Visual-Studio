@@ -14,7 +14,8 @@ namespace ChronosHistoryVS
         public string description { get; set; }
         public int? linesAdded { get; set; }
         public int? linesDeleted { get; set; }
-        public bool isPinned { get; set; }
+        // Shared cross-tool field name (matches the VS Code extension & Diff App).
+        public bool pinned { get; set; }
         public SelectionRange relevantRange { get; set; }
     }
 
@@ -34,9 +35,25 @@ namespace ChronosHistoryVS
         }
     }
 
+    // Per-project metadata, mirrored into the global workspaces.json registry so the
+    // Chronos Diff App (and VS Code extension) can discover history written here.
+    public class WorkspaceMetadata
+    {
+        public string id { get; set; }       // generateProjectHash(rootPath)
+        public string name { get; set; }     // project folder name
+        public string rootPath { get; set; } // absolute path of the project root
+        public long lastActivity { get; set; }
+    }
+
     public class HistoryIndex
     {
+        public WorkspaceMetadata workspace { get; set; }
         public List<Snapshot> snapshots { get; set; } = new List<Snapshot>();
+    }
+
+    public class WorkspaceRegistry
+    {
+        public List<WorkspaceMetadata> workspaces { get; set; } = new List<WorkspaceMetadata>();
     }
 
     public class ChronosConfig
